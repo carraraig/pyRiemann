@@ -14,6 +14,7 @@ from .mean import (
     mean_wasserstein,
     maskedmean_riemann,
     nanmean_riemann,
+    mean_siegel,
 )
 from .median import (
     median_euclid,
