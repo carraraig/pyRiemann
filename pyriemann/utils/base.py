@@ -153,6 +153,57 @@ def sqrtm(C):
     """
     return _matrix_operator(C, np.sqrt)
 
+def tanhm(C):
+    r"""Iperbolic tangent of SPD/HPD matrices.
+
+    The symmetric matrix iperbolic tangent of a SPD/HPD matrix
+    :math:`\mathbf{C}` is defined by:
+
+    .. math::
+        \mathbf{D} =
+        \mathbf{V} tanh \left( \mathbf{\Lambda} \right) \mathbf{V}^H
+
+    where :math:`\mathbf{\Lambda}` is the diagonal matrix of eigenvalues
+    and :math:`\mathbf{V}` the eigenvectors of :math:`\mathbf{C}`.
+
+    Parameters
+    ----------
+    C : ndarray, shape (..., n, n)
+        SPD/HPD matrices, at least 2D ndarray.
+
+    Returns
+    -------
+    D : ndarray, shape (..., n, n)
+        Matrix square root of C.
+    """
+    return _matrix_operator(C, np.tanh)
+
+
+def arctanhm(C):
+    r"""Inverse iperbolic tangent of SPD/HPD matrices.
+
+    The symmetric matrix inverse iperbolic tangent of a SPD/HPD matrix
+    :math:`\mathbf{C}` is defined by:
+
+    .. math::
+        \mathbf{D} =
+        \mathbf{V} arctangh \left( \mathbf{\Lambda} \right) \mathbf{V}^H
+
+    where :math:`\mathbf{\Lambda}` is the diagonal matrix of eigenvalues
+    and :math:`\mathbf{V}` the eigenvectors of :math:`\mathbf{C}`.
+
+    Parameters
+    ----------
+    C : ndarray, shape (..., n, n)
+        SPD/HPD matrices, at least 2D ndarray.
+
+    Returns
+    -------
+    D : ndarray, shape (..., n, n)
+        Matrix square root of C.
+    """
+    return _matrix_operator(C, np.arctanh)
+
 
 ###############################################################################
 

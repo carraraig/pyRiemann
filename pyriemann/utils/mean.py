@@ -6,6 +6,7 @@ import warnings
 
 from .ajd import ajd_pham
 from .base import sqrtm, invsqrtm, logm, expm, powm
+from .tangentspace import exp_map_siegel, log_map_siegel
 from .distance import distance_riemann
 from .geodesic import geodesic_riemann
 from .utils import check_weights
@@ -542,6 +543,66 @@ def mean_riemann(X=None, tol=10e-9, maxiter=50, init=None, sample_weight=None,
     return M
 
 
+def mean_siegel(X=None, tol=10e-9, maxiter=50, init=None, sample_weight=None):
+    r"""Mean of siegel matrices [2] according to the Siegel metric [1].
+
+    [1] Cabanes, Y. (2022). Multidimensional complex stationary centered Gaussian autoregressive time series machine
+        learning in Poincaré and Siegel disks: application for audio and radar clutter classification
+        (Doctoral dissertation, Université de Bordeaux).
+
+    [2] Jeuris, B., & Vandebril, R. (2016). The Kahler mean of block-Toeplitz matrices with Toeplitz structured blocks.
+        SIAM Journal on matrix analysis and applications, 37(3), 1151-1175.
+
+    Parameters
+    ----------
+    covmats : ndarray, shape (n_matrices, n, n)
+        Set of SPD/HPD matrices.
+    tol : float, default=10e-9
+        The tolerance to stop the gradient descent.
+    maxiter : int, default=50
+        The maximum number of iterations.
+    init : None | ndarray, shape (n, n), default=None
+        A SPD/HPD matrix used to initialize the gradient descent.
+        If None, the weighted Euclidean mean is used.
+
+    Returns
+    -------
+    C : ndarray, shape (n, n)
+        Siegel mean.
+
+    See Also
+    --------
+    mean_covariance
+    """
+    n_matrices, _, _ = X.shape
+    sample_weight = check_weights(sample_weight, n_matrices)
+    if init is None:
+        C = mean_euclid(X, sample_weight=sample_weight)
+    else:
+        C = init
+
+    nu = 1.0
+    tau = np.finfo(np.float64).max
+    crit = np.finfo(np.float64).max
+    for _ in range(maxiter):
+        Cov_Tang = log_map_siegel(X, C)
+        J = mean_euclid(Cov_Tang)
+        C = exp_map_siegel(nu * J, C)
+
+        crit = np.linalg.norm(J, ord='fro')
+        h = nu * crit
+        if h < tau:
+            nu = 0.95 * nu
+            tau = h
+        else:
+            nu = 0.5 * nu
+        if crit <= tol or nu <= tol:
+            break
+    else:
+        warnings.warn("Convergence not reached")
+
+    return C
+
 def mean_wasserstein(X=None, tol=10e-4, maxiter=50, init=None,
                      sample_weight=None, covmats=None):
     r"""Mean of SPD/HPD matrices according to the Wasserstein metric.
@@ -624,6 +685,7 @@ mean_functions = {
     'logeuclid': mean_logeuclid,
     'riemann': mean_riemann,
     'wasserstein': mean_wasserstein,
+    'siegel': mean_siegel
 }
 
 
