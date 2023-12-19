@@ -14,6 +14,8 @@ from .mean import (
     mean_wasserstein,
     maskedmean_riemann,
     nanmean_riemann,
+)
+from .mean_siegel import (
     mean_siegel,
 )
 from .median import (
@@ -39,4 +41,5 @@ __all__ = [
     "nanmean_riemann",
     "median_euclid",
     "median_riemann",
+    "mean_siegel"
 ]
