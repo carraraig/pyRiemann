@@ -543,11 +543,11 @@ class TangentSpaceSPDxSiegelDisk(BaseEstimator, TransformerMixin):
         ))
 
         for i in np.arange(1, X.shape[1]):
-            references[i, :, :] = np.real(mean_covariance_siegel(
+            references[i, :, :] = mean_covariance_siegel(
                 X[:, i],
                 metric=self.metric_mean_Siegel,
                 sample_weight=sample_weight
-            ))
+            )
 
         self.reference_ = references
 
