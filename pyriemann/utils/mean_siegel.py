@@ -127,7 +127,7 @@ def _check_mean_function(metric):
     return metric
 
 
-def mean_covariance(X=None, metric='siegel', sample_weight=None, covmats=None,
+def mean_covariance_siegel(X=None, metric='siegel', sample_weight=None, covmats=None,
                     **kwargs):
     """Mean of matrices according to a metric.
 
