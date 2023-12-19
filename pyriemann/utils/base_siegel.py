@@ -8,11 +8,11 @@ def _matrix_operator_siegel(C, operator):
     """Matrix function."""
     if not isinstance(C, np.ndarray) or C.ndim < 2:
         raise ValueError("Input must be at least a 2D ndarray")
-    M = C @ np.conj(C).T
-    lambda_, _ = np.linalg.eigh(M)
-    if not np.all(lambda_ <= 1 + 1e-12):
-        raise ValueError(
-            "Matrices not belong to Siegel Disk.")
+    # M = C @ np.conj(C).T
+    # lambda_, _ = np.linalg.eigh(M)
+    # if not np.all(lambda_ <= 1 + 1e-12):
+    #    raise ValueError(
+    #        "Matrices not belong to Siegel Disk.")
     eigvals, eigvecs = np.linalg.eigh(C)
     eigvals = operator(eigvals)
     if C.ndim >= 3:
