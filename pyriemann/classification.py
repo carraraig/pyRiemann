@@ -1110,7 +1110,7 @@ class MDMSPDxSiegel(BaseEstimator, ClassifierMixin, TransformerMixin):
         self : MDM instance
             The MDM instance.
         """
-        self.metric_mean_SPD, self.metric_map_SPD, self.metric_mean_Siegel, self.metric_map_Siegel = self._check_metric(self.metric)
+        self.metric_mean_SPD, self.metric_dist_SPD, self.metric_mean_Siegel, self.metric_dist_Siegel = self._check_metric(self.metric)
         self.classes_ = np.unique(y)
 
         if sample_weight is None:
@@ -1155,12 +1155,12 @@ class MDMSPDxSiegel(BaseEstimator, ClassifierMixin, TransformerMixin):
 
         dist = {}
 
-        dist["Covariance"] = [distance(X[:, 0], self.covmeans_["Covariance"][m], self.metric_dist)
+        dist["Covariance"] = [distance(X[:, 0], self.reference_["Covariance"][m], self.metric_dist_SPD)
                 for m in range(n_centroids)]
 
         for i in np.arange(1, X.shape[1]):
             key_name = f'Siegel_{i - 1}'
-            dist[key_name] = [distance(X[:, i], self.covmeans_[key_name][m], self.metric_dist)
+            dist[key_name] = [distance(X[:, i], self.reference_[key_name][m], self.metric_dist_Siegel)
              for m in range(n_centroids)]
 
         #dist = np.concatenate(dist, axis=1)
