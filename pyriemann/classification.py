@@ -1151,17 +1151,19 @@ class MDMSPDxSiegel(BaseEstimator, ClassifierMixin, TransformerMixin):
 
     def _predict_distances(self, X):
         """Helper to predict the distance. Equivalent to transform."""
-        n_centroids = len(self.covmeans_)
+        n_centroids = len(self.reference_["Covariance"])
 
-        if self.n_jobs == 1:
-            dist = [distance(X, self.covmeans_[m], self.metric_dist)
-                    for m in range(n_centroids)]
-        else:
-            dist = Parallel(n_jobs=self.n_jobs)(delayed(distance)(
-                X, self.covmeans_[m], self.metric_dist)
-                for m in range(n_centroids))
+        dist = {}
 
-        dist = np.concatenate(dist, axis=1)
+        dist["Covariance"] = [distance(X[:, 0], self.covmeans_["Covariance"][m], self.metric_dist)
+                for m in range(n_centroids)]
+
+        for i in np.arange(1, X.shape[1]):
+            key_name = f'Siegel_{i - 1}'
+            dist[key_name] = [distance(X[:, i], self.covmeans_[key_name][m], self.metric_dist)
+             for m in range(n_centroids)]
+
+        #dist = np.concatenate(dist, axis=1)
         return dist
 
     def predict(self, X):
