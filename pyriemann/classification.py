@@ -11,6 +11,7 @@ from joblib import Parallel, delayed
 
 from .utils.kernel import kernel
 from .utils.mean import mean_covariance, mean_power
+from .utils.mean_siegel import mean_covariance_siegel
 from .utils.distance import distance
 from .tangentspace import FGDA, TangentSpace
 
@@ -1041,3 +1042,175 @@ def _get_within(X, y, means, classes, exponent, metric_dist):
         sigmas.append(np.mean(dists_within))
     sum_sigmas = np.sum(sigmas)
     return sum_sigmas
+
+
+
+class MDMSPDxSiegel(BaseEstimator, ClassifierMixin, TransformerMixin):
+    """Classification by Minimum Distance to Mean in SPD x Siegel space [1].
+
+    Classification by nearest centroid. For each of the given classes, a
+    centroid is estimated according to the chosen metric. Then, for each new
+    point, the class is affected according to the nearest centroid.
+
+    Parameters
+    ----------
+    metric : string | dict, default=['riemann', 'siegel']
+        The type of metric used for centroid and distance estimation.
+        see `mean_covariance` for the list of supported metric.
+        the metric could be a dict with two keys, `mean` and `distance` in
+        order to pass different metrics for the centroid estimation and the
+        distance estimation. Typical usecase is to pass 'logeuclid' metric for
+        the mean in order to boost the computional speed and 'riemann' for the
+        distance in order to keep the good sensitivity for the classification.
+    n_jobs : int, default=1
+        The number of jobs to use for the computation. This works by computing
+        each of the class centroid in parallel.
+        If -1 all CPUs are used. If 1 is given, no parallel computing code is
+        used at all, which is useful for debugging. For n_jobs below -1,
+        (n_cpus + 1 + n_jobs) are used. Thus for n_jobs = -2, all CPUs but one
+        are used.
+
+    Attributes
+    ----------
+    classes_ : ndarray, shape (n_classes,)
+        Labels for each class.
+    covmeans_ : list of ``n_classes`` ndarrays of shape (n_channels, \
+            n_channels)
+        Centroids for each class.
+
+    See Also
+    --------
+    MDM
+
+    References
+    ----------
+    .. [1] Cabanes, Y. (2022). Multidimensional complex stationary centered Gaussian autoregressive time series machine
+        learning in Poincaré and Siegel disks: application for audio and radar clutter classification
+        (Doctoral dissertation, Université de Bordeaux).
+    """
+
+    def __init__(self, metric=['riemann', 'siegel']):
+        """Init."""
+        self.metric = metric
+
+    def fit(self, X, y, sample_weight=None):
+        """Fit (estimates) the centroids.
+
+        Parameters
+        ----------
+        X : ndarray, shape (n_matrices, n_channels, n_channels)
+            Set of SPD matrices.
+        y : ndarray, shape (n_matrices,)
+            Labels for each matrix.
+        sample_weight : None | ndarray, shape (n_matrices,), default=None
+            Weights for each matrix. If None, it uses equal weights.
+
+        Returns
+        -------
+        self : MDM instance
+            The MDM instance.
+        """
+        self.metric_mean_SPD, self.metric_map_SPD, self.metric_mean_Siegel, self.metric_map_Siegel = self._check_metric(self.metric)
+        self.classes_ = np.unique(y)
+
+        if sample_weight is None:
+            sample_weight = np.ones(X.shape[0])
+
+        references = {}
+
+        references["Covariance"] = [mean_covariance(
+            X[:, 0][y == ll],
+            metric=self.metric_mean_SPD,
+            sample_weight=sample_weight[y == ll]
+        ) for ll in self.classes_]
+
+        for i in np.arange(1, X.shape[1]):
+            key_name = f'Siegel_{i-1}'
+            references[key_name] = [mean_covariance_siegel(
+                X[:, i][y == ll],
+                metric=self.metric_mean_Siegel,
+                sample_weight=sample_weight[y == ll]
+            ) for ll in self.classes_]
+
+        self.reference_ = references
+
+        return self
+
+    def _check_metric(self, metric):
+
+        if isinstance(metric, list):
+            if len(metric) != 2:
+                raise TypeError('metric must be 2 dim list')
+
+        metric_mean_SPD = metric[0]
+        metric_map_SPD = metric[0]
+        metric_mean_Siegel = metric[1]
+        metric_map_Siegel = metric[1]
+
+        return metric_mean_SPD, metric_map_SPD, metric_mean_Siegel, metric_map_Siegel
+
+    def _predict_distances(self, X):
+        """Helper to predict the distance. Equivalent to transform."""
+        n_centroids = len(self.covmeans_)
+
+        if self.n_jobs == 1:
+            dist = [distance(X, self.covmeans_[m], self.metric_dist)
+                    for m in range(n_centroids)]
+        else:
+            dist = Parallel(n_jobs=self.n_jobs)(delayed(distance)(
+                X, self.covmeans_[m], self.metric_dist)
+                for m in range(n_centroids))
+
+        dist = np.concatenate(dist, axis=1)
+        return dist
+
+    def predict(self, X):
+        """Get the predictions.
+
+        Parameters
+        ----------
+        X : ndarray, shape (n_matrices, n_channels, n_channels)
+            Set of SPD matrices.
+
+        Returns
+        -------
+        pred : ndarray of int, shape (n_matrices,)
+            Predictions for each matrix according to the closest centroid.
+        """
+        dist = self._predict_distances(X)
+        return self.classes_[dist.argmin(axis=1)]
+
+    def transform(self, X):
+        """Get the distance to each centroid.
+
+        Parameters
+        ----------
+        X : ndarray, shape (n_matrices, n_channels, n_channels)
+            Set of SPD matrices.
+
+        Returns
+        -------
+        dist : ndarray, shape (n_matrices, n_classes)
+            The distance to each centroid according to the metric.
+        """
+        return self._predict_distances(X)
+
+    def fit_predict(self, X, y):
+        """Fit and predict in one function."""
+        self.fit(X, y)
+        return self.predict(X)
+
+    def predict_proba(self, X):
+        """Predict proba using softmax of negative squared distances.
+
+        Parameters
+        ----------
+        X : ndarray, shape (n_matrices, n_channels, n_channels)
+            Set of SPD matrices.
+
+        Returns
+        -------
+        prob : ndarray, shape (n_matrices, n_classes)
+            Probabilities for each class.
+        """
+        return softmax(-self._predict_distances(X) ** 2)

@@ -75,9 +75,6 @@ def log_map_siegel(X, Cref):
     to tangent space by Siegel Riemannian logarithmic map
     according to a Siegel reference matrix [1]
 
-    Implementation based on
-    https://github.com/geomstats/geomstats/blob/806764bf6dbabc0925ee0b0e54ee35ef3d0902d6/geomstats/geometry/siegel.py#L205
-
     [1] Cabanes, Y. (2022). Multidimensional complex stationary centered Gaussian autoregressive time series machine
         learning in Poincaré and Siegel disks: application for audio and radar clutter classification
         (Doctoral dissertation, Université de Bordeaux).
