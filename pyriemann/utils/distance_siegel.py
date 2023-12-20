@@ -125,11 +125,11 @@ def distance_siegel(A, B, metric='siegel', squared=False):
 
     shape_A, shape_B = A.shape, B.shape
     if shape_A == shape_B:
-        d = distance_function(A, B, squared=squared)
+        d = distance_function(A, B)
     elif len(shape_A) == 3 and len(shape_B) == 2:
         d = np.empty((shape_A[0], 1))
         for i in range(shape_A[0]):
-            d[i] = distance_function(A[i], B, squared=squared)
+            d[i] = distance_function(A[i], B)
     else:
         raise ValueError("Inputs have incompatible dimensions.")
 
