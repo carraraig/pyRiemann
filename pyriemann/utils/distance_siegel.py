@@ -46,6 +46,8 @@ def distance_siegel(A, B):
     distance
     """
     _check_inputs(A, B)
+    A = A.astype(complex)
+    B = B.astype(complex)
     if len(A.shape) > 2:
         A_conjT = np.transpose(A.conj(), axes=[0, 2, 1])
     else:
