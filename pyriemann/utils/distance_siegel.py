@@ -47,14 +47,14 @@ def distance_siegel(A, B):
     """
     _check_inputs(A, B)
     if len(A.shape) > 2:
-        A_conjT = A @ np.transpose(A.conj(), axes=[0, 2, 1])
+        A_conjT = np.transpose(A.conj(), axes=[0, 2, 1])
     else:
-        A_conjT = A @ A.conj().T
+        A_conjT = A.conj().T
 
     if len(B.shape) > 2:
-        B_conjT = B @ np.transpose(B.conj(), axes=[0, 2, 1])
+        B_conjT = np.transpose(B.conj(), axes=[0, 2, 1])
     else:
-        B_conjT = B @ B.conj().T
+        B_conjT = B.conj().T
 
     term1 = B - A
     term2 = np.linalg.inv(np.eye(A.shape[0]) - A_conjT @ B)
