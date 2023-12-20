@@ -3,6 +3,7 @@
 import numpy as np
 from numpy.core.numerictypes import typecodes
 from .test import is_pos_def
+import scipy
 
 def _matrix_operator_siegel(C, operator):
     """Matrix function."""
@@ -16,7 +17,7 @@ def _matrix_operator_siegel(C, operator):
     #if not np.all(lambda_ <= 1 + 1e-12):
     #    raise ValueError(
     #        "Matrices not belong to Siegel Disk.")
-    eigvals, eigvecs = np.linalg.eigh(C)
+    eigvals, eigvecs = scipy.linalg.eigh(C)
     eigvals = operator(eigvals)
     if C.ndim >= 3:
         eigvals = np.expand_dims(eigvals, -2)
