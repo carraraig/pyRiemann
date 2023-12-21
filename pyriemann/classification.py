@@ -1164,7 +1164,17 @@ class MDMSPDxSiegel(BaseEstimator, ClassifierMixin, TransformerMixin):
             dist[key_name] = [distance_siegel(X[:, i], self.reference_[key_name][m], self.metric_dist_Siegel)
                 for m in range(n_centroids)]
 
-        #dist = np.concatenate(dist, axis=1)
+        n = len(self.reference_)
+        dist_final = []
+        for m in range(n_centroids):
+            dist_ = n * dist["Covariance"][m]
+            for i in np.arange(1, X.shape[1]):
+                key_name = f'Siegel_{i - 1}'
+                dist_ = dist_ + (n-i) * dist[key_name][m]
+
+            dist_final.append(dist_)
+
+        dist = np.concatenate(dist, axis=1)
         return dist
 
     def predict(self, X):
