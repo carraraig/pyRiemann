@@ -58,18 +58,13 @@ def distance_siegel(A, B):
     else:
         B_conjT = B.conj().T
 
-    M1 = A @ A_conjT
-    lambda_1, _ = np.linalg.eigh(M1)
-    M2 = B @ B_conjT
-    lambda_2, _ = np.linalg.eigh(M2)
-
     term1 = B - A
     term2 = np.linalg.inv(np.eye(A.shape[0]) - A_conjT @ B)
     term3 = B_conjT - A_conjT
     term4 = np.linalg.inv(np.eye(A.shape[0]) - A @ B_conjT)
     C = term1 @ term2 @ term3 @ term4
 
-    C_sqrt = sqrtm(C)
+    C_sqrt = scipy.linalg.fractional_matrix_power(C, 0.5)
 
     arctanh = arctanhm(C_sqrt)
     sq_dist = np.trace(arctanh @ arctanh)
