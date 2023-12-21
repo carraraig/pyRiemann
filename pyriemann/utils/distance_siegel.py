@@ -5,7 +5,7 @@ from scipy.linalg import eigvalsh, solve
 from sklearn.metrics import euclidean_distances
 import scipy
 
-from .base_siegel import logm, sqrtm, invsqrtm
+from .base_siegel import logm, sqrtm, invsqrtm, arctanhm
 
 
 def _check_inputs(A, B):
@@ -58,20 +58,21 @@ def distance_siegel(A, B):
     else:
         B_conjT = B.conj().T
 
+    M1 = A @ A_conjT
+    lambda_1, _ = np.linalg.eigh(M1)
+    M2 = B @ B_conjT
+    lambda_2, _ = np.linalg.eigh(M2)
+
     term1 = B - A
     term2 = np.linalg.inv(np.eye(A.shape[0]) - A_conjT @ B)
     term3 = B_conjT - A_conjT
     term4 = np.linalg.inv(np.eye(A.shape[0]) - A @ B_conjT)
     C = term1 @ term2 @ term3 @ term4
 
-    prod_power_one_half = sqrtm(C)
-    num = np.eye(A.shape[0]) + prod_power_one_half
-    den = scipy.linalg.inv(np.eye(A.shape[0]) - prod_power_one_half)
+    C_sqrt = sqrtm(C)
 
-    frac = num @ den
-
-    logarithm = logm(frac)
-    sq_dist = 0.25 * np.trace(logarithm @ logarithm)
+    arctanh = arctanhm(C_sqrt)
+    sq_dist = np.trace(arctanh @ arctanh)
     sq_dist = np.real(sq_dist)
 
     return np.maximum(sq_dist, 0)
