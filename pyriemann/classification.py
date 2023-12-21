@@ -1174,8 +1174,8 @@ class MDMSPDxSiegel(BaseEstimator, ClassifierMixin, TransformerMixin):
 
             dist_final.append(dist_)
 
-        dist = np.concatenate(dist, axis=1)
-        return dist
+        dist_final = np.concatenate(dist_final, axis=1)
+        return dist_final
 
     def predict(self, X):
         """Get the predictions.
