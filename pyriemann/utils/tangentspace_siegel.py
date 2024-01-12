@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from .base import sqrtm, invsqrtm, logm, expm, tanhm, arctanhm
+from .base_siegel import sqrtm, invsqrtm, logm, expm, tanhm, arctanhm
 from .mean import mean_covariance
 
 
