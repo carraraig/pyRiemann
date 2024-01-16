@@ -504,13 +504,17 @@ class TangentSpaceSPDxSiegelDisk(BaseEstimator, TransformerMixin):
 
         tangent = np.empty_like(X)
         tan_ = np.real(tangent_space(X[:, 0, :, :], Cr[0], metric=self.metric_map_SPD))
-        tangent[:, 0] = unupper(tan_)
+        tan__ = unupper(tan_)
+        for j in np.arange(X.shape[0]):
+            tangent[j, 0] = (tan__[j] - tan__[j].min()) / (tan__[j].max() - tan__[j].min())
 
         for i in np.arange(1, X.shape[1]):
-            tangent[:, i] = np.real(tangent_space_siegel(
+            tan_ = np.real(tangent_space_siegel(
                 X[:, i, :, :],
                 Cr[i],
                 metric=self.metric_map_Siegel))
+            for j in np.arange(X.shape[0]):
+                tangent[j, i] = (tan_[j] - tan_[j].min()) / (tan_[j].max() - tan_[j].min())
 
         return np.real(tangent.reshape(X.shape[0], -1))
 
@@ -553,13 +557,17 @@ class TangentSpaceSPDxSiegelDisk(BaseEstimator, TransformerMixin):
 
         tangent = np.empty_like(X)
         tan_ = np.real(tangent_space(X[:, 0, :, :], self.reference_[0], metric=self.metric_map_SPD))
-        tangent[:, 0] = unupper(tan_)
+        tan__ = unupper(tan_)
+        for j in np.arange(X.shape[0]):
+            tangent[j, 0] = (tan__[j] - tan__[j].min()) / (tan__[j].max() - tan__[j].min())
 
         for i in np.arange(1, X.shape[1]):
-            tangent[:, i] = np.real(tangent_space_siegel(
+            tan_ = np.real(tangent_space_siegel(
                 X[:, i, :, :],
                 self.reference_[i],
                 metric=self.metric_map_Siegel))
+            for j in np.arange(X.shape[0]):
+                tangent[j, i] = (tan_[j] - tan_[j].min()) / (tan_[j].max() - tan_[j].min())
 
         return np.real(tangent.reshape(X.shape[0], -1))
 
