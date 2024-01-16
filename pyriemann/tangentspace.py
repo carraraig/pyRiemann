@@ -403,9 +403,10 @@ class TangentSpaceSPDxSiegelDisk(BaseEstimator, TransformerMixin):
            GSI 2021, Paris, France, July 21–23, 2021, Proceedings 5. Springer International Publishing, 2021.
     """
 
-    def __init__(self, metric=['riemann', 'siegel']):
+    def __init__(self, metric=['riemann', 'siegel'], alpha=1):
         """Init."""
         self.metric = metric
+        self.alpha = alpha
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit (estimates) the reference point.
@@ -504,7 +505,7 @@ class TangentSpaceSPDxSiegelDisk(BaseEstimator, TransformerMixin):
 
         tangent = np.empty_like(X)
         tan_ = np.real(tangent_space(X[:, 0, :, :], Cr[0], metric=self.metric_map_SPD))
-        tangent[:, 0] = unupper(tan_)
+        tangent[:, 0] = self.alpha * unupper(tan_)
 
         for i in np.arange(1, X.shape[1]):
             tangent[:, i] = np.real(tangent_space_siegel(
@@ -553,7 +554,7 @@ class TangentSpaceSPDxSiegelDisk(BaseEstimator, TransformerMixin):
 
         tangent = np.empty_like(X)
         tan_ = np.real(tangent_space(X[:, 0, :, :], self.reference_[0], metric=self.metric_map_SPD))
-        tangent[:, 0] = unupper(tan_)
+        tangent[:, 0] = self.alpha * unupper(tan_)
 
         for i in np.arange(1, X.shape[1]):
             tangent[:, i] = np.real(tangent_space_siegel(
