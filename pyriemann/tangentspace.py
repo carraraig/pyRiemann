@@ -586,3 +586,211 @@ class TangentSpaceSPDxSiegelDisk(BaseEstimator, TransformerMixin):
         #self._check_reference_points(X)
         # TODO
         return untangent_space(X, self.reference_, metric=self.metric_map)"""
+
+
+class TangentSpaceSiegelDisk(BaseEstimator, TransformerMixin):
+
+    """Tangent space project TransformerMixin for Siegel Disk.
+
+    Tangent space projection map the Siegel Disk matrix according to [1].
+
+    Tangent space projection is useful to convert SPD matrices in
+    Euclidean vectors while conserving the inner structure of the manifold.
+    After projection, standard processing and vector-based classification can
+    be applied.
+
+    Tangent space projection is a local approximation of the manifold. it takes
+    one parameter, the reference point, that is usually estimated using the
+    geometric mean of the SPD matrices set you project. If the function
+    `fit` is not called, the identity matrix will be used as reference point.
+    This can lead to serious degradation of performances.
+    The approximation will be bigger if the matrices in the set are scattered
+    in the manifold, and lower if they are grouped in a small region of the
+    manifold.
+
+    After projection, it is possible to go back in the manifold using the
+    inverse transform.
+
+    Parameters
+    ----------
+    metric : string | dict, default=['riemann', 'siegel']
+        The type of metric used for reference matrix estimation (see
+        `mean_covariance` for the list of supported metric) and for tangent
+        space map (see `tangent_space` for the list of supported metric).
+        The metric could be a dict with two keys, `mean` and `map` in
+        order to pass different metrics for the reference matrix estimation
+        and the tangent space mapping.
+
+    Attributes
+    ----------
+    reference_ : ndarray
+        If fit, the reference point for tangent space mapping.
+
+    References
+    ----------
+    .. [1] Cabanes, Yann, and Frank Nielsen. "Classification in the Siegel Space for Vectorial
+           Autoregressive Data." Geometric Science of Information: 5th International Conference,
+           GSI 2021, Paris, France, July 21–23, 2021, Proceedings 5. Springer International Publishing, 2021.
+    """
+
+    def __init__(self, metric=['siegel'], alpha=1):
+        """Init."""
+        self.metric = metric
+        self.alpha = alpha
+
+    def fit(self, X, y=None, sample_weight=None):
+        """Fit (estimates) the reference point.
+
+        Parameters
+        ----------
+        X : ndarray, shape (n_matrices, n_channels, n_channels)
+            Set of SPD matrices.
+        y : None
+            Not used, here for compatibility with sklearn API.
+        sample_weight : None | ndarray, shape (n_matrices,), default=None
+            Weights for each matrix. If None, it uses equal weights.
+
+        Returns
+        -------
+        self : TangentSpace instance
+            The TangentSpace instance.
+        """
+        self.metric_mean_Siegel, self.metric_map_Siegel = self._check_metric(self.metric)
+
+        references = np.empty((X.shape[1], X.shape[2], X.shape[3]))
+
+
+        for i in np.arange(0, X.shape[1]):
+            references[i, :, :] = np.real(mean_covariance_siegel(
+                X[:, i],
+                metric=self.metric_mean_Siegel,
+                sample_weight=sample_weight
+            ))
+
+        self.reference_ = np.real(references)
+        return self
+
+    def _check_metric(self, metric):
+
+        metric_mean_Siegel = metric[0]
+        metric_map_Siegel = metric[0]
+
+        return metric_mean_Siegel, metric_map_Siegel
+
+    def _check_data_dim(self, X):
+        """Check data shape and return the size of SPD matrix."""
+        """shape_X = X.shape
+        if len(X.shape) == 2:
+            n_channels = (np.sqrt(1 + 8 * shape_X[1]) - 1) / 2
+            if n_channels != int(n_channels):
+                raise ValueError("Shape of Tangent space vector does not"
+                                 " correspond to a square matrix.")
+            return int(n_channels)
+        elif len(X.shape) == 3:
+            if shape_X[1] != shape_X[2]:
+                raise ValueError("Matrices must be square")
+            return int(shape_X[1])
+        else:
+            raise ValueError("Shape must be of len 2 or 3.")"""
+
+    def _check_reference_points(self, X):
+        """Check reference point status, and force it to identity if not."""
+        """if not hasattr(self, 'reference_'):
+            self.reference_ = np.eye(self._check_data_dim(X))
+        else:
+            shape_cr = self.reference_.shape[0]
+            shape_X = self._check_data_dim(X)
+
+            if shape_cr != shape_X:
+                raise ValueError('Data must be same size of reference point.')"""
+
+    def transform(self, X):
+        """Tangent space projection.
+
+        Parameters
+        ----------
+        X : ndarray, shape (n_matrices, n_channels, n_channels)
+            Set of SPD matrices.
+
+        Returns
+        -------
+        ts : ndarray, shape (n_matrices, n_ts)
+            Tangent space projections of SPD matrices.
+        """
+        self.metric_mean_Siegel, self.metric_map_Siegel = self._check_metric(self.metric)
+        # self._check_reference_points(X)
+
+        Cr = self.reference_
+
+        tangent = np.empty_like(X)
+
+        for i in np.arange(0, X.shape[1]):
+            tangent[:, i] = np.real(tangent_space_siegel(
+                X[:, i, :, :],
+                Cr[i],
+                metric=self.metric_map_Siegel))
+
+        return np.real(tangent.reshape(X.shape[0], -1))
+
+    def fit_transform(self, X, y=None, sample_weight=None):
+        """Fit and transform in a single function.
+
+        Parameters
+        ----------
+        X : ndarray, shape (n_matrices, n_channels, n_channels)
+            Set of SPD matrices.
+        y : None
+            Not used, here for compatibility with sklearn API.
+        sample_weight : None | ndarray, shape (n_matrices,), default=None
+            Weights for each matrix. If None, it uses equal weights.
+
+        Returns
+        -------
+        ts : ndarray, shape (n_matrices, n_ts)
+            Tangent space projections of SPD matrices.
+        """
+        self.metric_mean_Siegel, self.metric_map_Siegel = self._check_metric(self.metric)
+
+        references = np.empty((X.shape[1], X.shape[2], X.shape[3]))
+
+        for i in np.arange(0, X.shape[1]):
+            references[i, :, :] = np.real(mean_covariance_siegel(
+                X[:, i],
+                metric=self.metric_mean_Siegel,
+                sample_weight=sample_weight
+            ))
+
+        self.reference_ = references
+
+        tangent = np.empty_like(X)
+
+        for i in np.arange(0, X.shape[1]):
+            tangent[:, i] = np.real(tangent_space_siegel(
+                X[:, i, :, :],
+                self.reference_[i],
+                metric=self.metric_map_Siegel))
+
+        return np.real(tangent.reshape(X.shape[0], -1))
+
+    def inverse_transform(self, X, y=None):
+        """Inverse transform.
+
+        Project back a set of tangent space vector in the manifold.
+
+        Parameters
+        ----------
+        X : ndarray, shape (n_matrices, n_ts)
+            Set of tangent space projections of the matrices.
+        y : None
+            Not used, here for compatibility with sklearn API.
+
+        Returns
+        -------
+        cov : ndarray, shape (n_matrices, n_channels, n_channels)
+            Set of SPD matrices corresponding to each of tangent vector.
+        """
+        """self.metric_mean_SPD, self.metric_map_SPD, self.metric_mean_Siegel, self.metric_map_Siegel = self._check_metric(
+            self.metric)
+        #self._check_reference_points(X)
+        # TODO
+        return untangent_space(X, self.reference_, metric=self.metric_map)"""
