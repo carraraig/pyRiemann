@@ -633,7 +633,7 @@ class TangentSpaceSiegelDisk(BaseEstimator, TransformerMixin):
            GSI 2021, Paris, France, July 21–23, 2021, Proceedings 5. Springer International Publishing, 2021.
     """
 
-    def __init__(self, metric=['siegel'], alpha=1):
+    def __init__(self, metric='siegel', alpha=1):
         """Init."""
         self.metric = metric
         self.alpha = alpha
@@ -672,10 +672,23 @@ class TangentSpaceSiegelDisk(BaseEstimator, TransformerMixin):
 
     def _check_metric(self, metric):
 
-        metric_mean_Siegel = metric[0]
-        metric_map_Siegel = metric[0]
+        if isinstance(metric, str):
+            metric_mean = metric
+            metric_map = metric
 
-        return metric_mean_Siegel, metric_map_Siegel
+        elif isinstance(metric, dict):
+            # check keys
+            for key in ['mean', 'map']:
+                if key not in metric.keys():
+                    raise KeyError('metric must contain "mean" and "map"')
+
+            metric_mean = metric['mean']
+            metric_map = metric['map']
+
+        else:
+            raise TypeError('metric must be dict or str')
+
+        return metric_mean, metric_map
 
     def _check_data_dim(self, X):
         """Check data shape and return the size of SPD matrix."""
