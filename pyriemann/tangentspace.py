@@ -633,10 +633,11 @@ class TangentSpaceSiegelDisk(BaseEstimator, TransformerMixin):
            GSI 2021, Paris, France, July 21–23, 2021, Proceedings 5. Springer International Publishing, 2021.
     """
 
-    def __init__(self, metric='siegel', alpha=1):
+    def __init__(self, metric='siegel', alpha=1, flattern=True):
         """Init."""
         self.metric = metric
         self.alpha = alpha
+        self.flattern = flattern
 
     def fit(self, X, y=None, sample_weight=None):
         """Fit (estimates) the reference point.
@@ -743,7 +744,10 @@ class TangentSpaceSiegelDisk(BaseEstimator, TransformerMixin):
                 Cr[i],
                 metric=self.metric_map_Siegel))
 
-        return np.real(tangent.reshape(X.shape[0], -1))
+        if self.flattern:
+            return np.real(tangent.reshape(X.shape[0], -1))
+        else:
+            return np.real(tangent)
 
     def fit_transform(self, X, y=None, sample_weight=None):
         """Fit and transform in a single function.
@@ -783,7 +787,10 @@ class TangentSpaceSiegelDisk(BaseEstimator, TransformerMixin):
                 self.reference_[i],
                 metric=self.metric_map_Siegel))
 
-        return np.real(tangent.reshape(X.shape[0], -1))
+        if self.flattern:
+            return np.real(tangent.reshape(X.shape[0], -1))
+        else:
+            return np.real(tangent)
 
     def inverse_transform(self, X, y=None):
         """Inverse transform.
